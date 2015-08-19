@@ -12,14 +12,14 @@ Windows platform is not supported.
 ```
 Usage: ve [options...] [py-env] [node-env]
 
-  -b	--base-dir				- echoes base directory for project
-  -r	--prerequisites				- installs required prerequisites (deb)
-  -i	--installed				- list installed virtual environments
-  -p	--python-newest-available		- print newest Python versions available
-  -P	--python-build <py-version>		- build Python environment for version
-  -n	--node-available <py-env>		- print list of Node versions available
-  -N	--node-build <py-env> <node-version>	- build Node environment for version
-  [env]						- source environment i.e.: . ./ve py-3.4.3
+  -b    --base-dir                              - echoes base directory for project
+  -r    --prerequisites                         - installs required prerequisites (deb)
+  -i    --installed                             - list installed virtual environments
+  -p    --python-newest-available               - print newest Python versions available
+  -P    --python-build <py-version>             - build Python environment for version
+  -n    --node-available <py-env>               - print list of Node versions available
+  -N    --node-build <py-env> <node-version>    - build Node environment for version
+  [env]                                         - source environment i.e.: . ./ve py-3.4.3
 ```
 
 ## Configuration
@@ -89,11 +89,11 @@ installed Python virtual environment, we use 3.4.3 installed a moment ago:
 ```
 /srv/project$ ./bin/ve -n 3.4.3
 Requirement already up-to-date: nodeenv in ./lib/python3.4/site-packages
-0.0.1	0.0.2	0.0.3	0.0.4	0.0.5	0.0.6	0.1.0	0.1.1
-0.1.2	0.1.3	0.1.4	0.1.5	0.1.6	0.1.7	0.1.8	0.1.9
+0.0.1   0.0.2   0.0.3   0.0.4   0.0.5   0.0.6   0.1.0   0.1.1
+0.1.2   0.1.3   0.1.4   0.1.5   0.1.6   0.1.7   0.1.8   0.1.9
 [...]
-0.11.11	0.11.12	0.11.13	0.11.14	0.11.15	0.11.16	0.12.0	0.12.1
-0.12.2	0.12.3	0.12.4	0.12.5	0.12.6	0.12.7
+0.11.11 0.11.12 0.11.13 0.11.14 0.11.15 0.11.16 0.12.0  0.12.1
+0.12.2  0.12.3  0.12.4  0.12.5  0.12.6  0.12.7
 ```
 
 We install most current version of Node.JS:

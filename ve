@@ -55,14 +55,14 @@ to base directory. Python venv activate include new setdsm function for Django u
 
 Usage: `basename $BASH_SOURCE` [options...] [py-env] [node-env]
 
-  -b	--base-dir				- echoes base directory for project
-  -r	--prerequisites				- installs required prerequisites (deb)
-  -i	--installed				- list installed virtual environments
-  -p	--python-newest-available		- print newest Python versions available
-  -P	--python-build <py-version>		- build Python environment for version
-  -n	--node-available <py-env>		- print list of Node versions available
-  -N	--node-build <py-env> <node-version>	- build Node environment for version
-  [env]						- source environment i.e.: . ./`basename $BASH_SOURCE` py-3.4.3
+  -b    --base-dir                              - echoes base directory for project
+  -r    --prerequisites                         - installs required prerequisites (deb)
+  -i    --installed                             - list installed virtual environments
+  -p    --python-newest-available               - print newest Python versions available
+  -P    --python-build <py-version>             - build Python environment for version
+  -n    --node-available <py-env>               - print list of Node versions available
+  -N    --node-build <py-env> <node-version>    - build Node environment for version
+  [env]                                         - source environment i.e.: . ./`basename $BASH_SOURCE` py-3.4.3
 
 EOF
   _exit_1
@@ -226,8 +226,8 @@ case $PARAM in
     shift
     if [ -z "$VERSION" ]
     then
-	echo "$PARAM required parameter missing!" >&2
-	_exit_1
+        echo "$PARAM required parameter missing!" >&2
+        _exit_1
     fi
     _mkdir_build
     [ -e "$BASE_DIR/build/python-$VERSION" ] && rm -rf "$BASE_DIR/build/python-$VERSION" >/dev/null 2>&1
@@ -235,7 +235,7 @@ case $PARAM in
     cd "$BASE_DIR/build/python-$VERSION"
     if [ ! -e "Python-"$VERSION".tgz" ]
     then
-    	wget "https://www.python.org/ftp/python/$VERSION/Python-"$VERSION".tgz"
+        wget "https://www.python.org/ftp/python/$VERSION/Python-"$VERSION".tgz"
     fi
     tar zxf "Python-"$VERSION".tgz"
     BASE_VERSION="`echo $VERSION | cut -f1 -d.`"
@@ -256,8 +256,8 @@ case $PARAM in
     shift
     if [ -z "$PYTHON_ENV" ]
     then
-	echo "$PARAM required parameter missing!" >&2
-	_exit_1
+        echo "$PARAM required parameter missing!" >&2
+        _exit_1
     fi
     PYTHON_VERSION=`echo $PYTHON_ENV | sed -r 's/py-//'`
     cd "$BASE_DIR/build/python-$PYTHON_VERSION/py-$PYTHON_VERSION/"
@@ -273,8 +273,8 @@ case $PARAM in
     shift
     if [ -z "$PYTHON_ENV" -o -z "$NODE_VERSION" ]
     then
-	echo "$PARAM required parameter(s) missing!" >&2
-	_exit_1
+        echo "$PARAM required parameter(s) missing!" >&2
+        _exit_1
     fi
     PYTHON_VERSION=`echo $PYTHON_ENV | sed -r 's/py-//'`
     cd "$BASE_DIR/build/python-$PYTHON_VERSION/py-$PYTHON_VERSION/"
