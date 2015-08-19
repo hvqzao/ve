@@ -1,0 +1,309 @@
+#!/bin/bash
+
+# The MIT License (MIT)
+# 
+# Copyright (c) 2015 Marcin Woloszyn (@hvqzao)
+# 
+# Permission is hereby granted, free of charge, to any person obtaining a copy
+# of this software and associated documentation files (the "Software"), to deal
+# in the Software without restriction, including without limitation the rights
+# to use, copy, modify, merge, publish, distribute, sublicense, and/or sell
+# copies of the Software, and to permit persons to whom the Software is
+# furnished to do so, subject to the following conditions:
+# 
+# The above copyright notice and this permission notice shall be included in
+# all copies or substantial portions of the Software.
+# 
+# THE SOFTWARE IS PROVIDED "AS IS", WITHOUT WARRANTY OF ANY KIND, EXPRESS OR
+# IMPLIED, INCLUDING BUT NOT LIMITED TO THE WARRANTIES OF MERCHANTABILITY,
+# FITNESS FOR A PARTICULAR PURPOSE AND NONINFRINGEMENT. IN NO EVENT SHALL THE
+# AUTHORS OR COPYRIGHT HOLDERS BE LIABLE FOR ANY CLAIM, DAMAGES OR OTHER
+# LIABILITY, WHETHER IN AN ACTION OF CONTRACT, TORT OR OTHERWISE, ARISING FROM,
+# OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN
+# THE SOFTWARE.
+
+# Configuration:
+#
+# .ve file in script directory if present, will be sourced. BASE_DIR, PY, NODE,
+# VE_BIN are expected environment variables. PY and NODE will be used when script
+# will detect that it has been sourced with no parameters given. .ve file will
+# also be searched in BASE_DIR. BASE_DIR/VE_BIN will be added to PATH when script
+# is sourced. New functions available after sourcing:
+# deact() will restore PATH and deactivate Python and Node envs.
+# cdve() changes directory to BASE_DIR.
+#
+F="$(dirname `realpath $BASH_SOURCE`)/.ve" ; [ -f "$F" ] && source "$F"
+[ "$BASE_DIR/.ve" != "$F" ] && source "$BASE_DIR/.ve"
+#
+# Eventually, above mentioned parameters can be hardcoded: 
+#BASE_DIR="/srv/project"
+#PY="py-3.4.3"
+#NODE="node-0.12.7"
+#VE_BIN="bin"
+#
+# If not retrieved or set, script base directory will act as a fallback value.
+
+usage_exit() {
+  cat >&2 <<EOF
+
+ve v1.00, Release: Sun Aug 16 18:46:11 CEST 2015
+
+Created to provide fast provisioning - automated download, build and set up Python or
+Node.JS virtual environments. It uses Python 2 virtualenv, Python 3 (built-in) venv and
+nodeenv (installed from PyPI repo). Sourcing Node will automatically link node_modules
+to base directory. Python venv activate include new setdsm function for Django users.
+
+Usage: `basename $BASH_SOURCE` [options...] [py-env] [node-env]
+
+  -b	--base-dir				- echoes base directory for project
+  -r	--prerequisites				- installs required prerequisites (deb)
+  -i	--installed				- list installed virtual environments
+  -p	--python-newest-available		- print newest Python versions available
+  -P	--python-build <py-version>		- build Python environment for version
+  -n	--node-available <py-env>		- print list of Node versions available
+  -N	--node-build <py-env> <node-version>	- build Node environment for version
+  [env]						- source environment i.e.: . ./`basename $BASH_SOURCE` py-3.4.3
+
+EOF
+  _exit_1
+}
+
+[ -z "$BASE_DIR" ] && BASE_DIR=$(dirname `realpath $BASH_SOURCE`)
+
+python_newest() {
+  if [ -z "$PYTHON_NEWEST" ]
+  then
+    PYTHON_NEWEST=`wget https://www.python.org/downloads/ -qO - | grep "/\">Download Python" | sed -r 's/.*\s(.*)<\/a>/\1/'`
+  fi
+}
+
+_mkdir_build() {
+  [ ! -d "$BASE_DIR/build" ] && mkdir -p "$BASE_DIR/build"
+}
+
+_setdsm() {
+  cat >>"py-$VERSION/bin/activate" <<EOF
+
+setdsm () {
+    # add the current directory and the parent directory to PYTHONPATH
+    # sets DJANGO_SETTINGS_MODULE
+    export PYTHONPATH=\$PYTHONPATH:\$PWD/..
+    export PYTHONPATH=\$PYTHONPATH:\$PWD
+    if [ -z "\$1" ]; then
+        x=\${PWD/\/[^\/]*\/}
+        export DJANGO_SETTINGS_MODULE=\$x.settings
+    else
+        export DJANGO_SETTINGS_MODULE=\$1
+    fi
+
+    echo "DJANGO_SETTINGS_MODULE set to \$DJANGO_SETTINGS_MODULE"
+}
+EOF
+}
+
+python_2_build() {
+  VERSION=$1
+  BASE_VERSION=`echo $VERSION | sed -r 's/\.[^\.]*$//'`
+  PYTHON_DIR="Python-$VERSION"
+  cd "$PYTHON_DIR"
+  ./configure --prefix="$BASE_DIR/build/python-$VERSION/build"
+  make
+  echo "Please verify if Python has been compiled with all compontents that are necessary for you. If not, you can install libraries on your own or use: `basename $BASH_SOURCE` --prerequisites" >&2
+  echo "Press Enter to continue or ^C to abort..." >&2
+  read
+  make install
+  cd ..
+  VIRTUALENV_URL=`wget -qO - https://pypi.python.org/pypi/virtualenv | grep "tar.gz<\/a>" | sed -r 's/.*\"(.*)\".*/\1/'`
+  wget "$VIRTUALENV_URL"
+  VIRTUALENV_FILE=`echo $VIRTUALENV_URL | sed -r 's/.*\/(.*)#.*/\1/'`
+  tar zxf "$VIRTUALENV_FILE"
+  VIRTUALENV_DIR=`basename $VIRTUALENV_FILE .tar.gz`
+  cd "$VIRTUALENV_DIR/"
+  "$BASE_DIR/build/python-$VERSION/build/bin/python" setup.py install
+  cd ..
+  #cd ../..
+  "$BASE_DIR/build/python-$VERSION/build/bin/virtualenv" "py-$VERSION"
+  sed -i 's/)\$PS1/) \$PS1/' "py-$VERSION/bin/activate"
+  _setdsm
+  cd "py-$VERSION/"
+  ln -s "lib/python$BASE_VERSION/site-packages"
+  . ./bin/activate
+  pip install --upgrade pip
+  deactivate
+  cd "$BASE_DIR/"
+}
+
+python_3_build() {
+  VERSION=$1
+  BASE_VERSION=`echo $VERSION | sed -r 's/\.[^\.]*$//'`
+  PYTHON_DIR="Python-$VERSION"
+  cd "$PYTHON_DIR"
+  ./configure
+  make
+  echo "Please verify if Python has been compiled with all compontents that are necessary for you. If not, you can install libraries on your own or use: `basename $BASH_SOURCE` --prerequisites" >&2
+  echo "Press Enter to continue or ^C to abort..." >&2
+  read
+  ./python -m venv "../py-$VERSION"
+  cd ..
+  _setdsm
+  cd "py-$VERSION/"
+  ln -s "lib/python$BASE_VERSION/site-packages"
+  . ./bin/activate
+  pip install --upgrade pip
+  pip install --upgrade ipython
+  deactivate
+  cd "$BASE_DIR/"
+  echo "lib/python$BASE_VERSION/site-packages"
+}
+
+_exit_1() {
+  exit 1
+}
+
+_exit_0() {
+  exit 0
+}
+
+if [ $# -eq 0 ]
+then
+  if [ "`basename -- $0`" != "`basename $BASH_SOURCE`" -a \( -n "$PY" -o -n "$NODE" \) ]
+  then
+    [ -z "$NODE" ] || set -- "$NODE" $@
+    [ -z "$PY" ] || set -- "$PY" $@
+  else
+    usage_exit
+  fi
+fi
+while [[ $# > 0 ]]
+do
+
+echo "$1" | egrep "^py-" >/dev/null && if [ -d "$BASE_DIR/build/python-`echo $1 | sed 's/^py-//'`/$1" ]
+then
+  rm "$BASE_DIR/$1" >/dev/null 2>&1
+  . "$BASE_DIR/build/python-`echo $1 | sed 's/^py-//'`/$1/bin/activate"
+  ln -s "$BASE_DIR/build/python-`echo $1 | sed 's/^py-//'`/$1" "$BASE_DIR"
+  shift
+  PENV=1
+else
+  echo "$1 not found!" >&2
+  shift
+fi
+echo "$1" | egrep "^node-" >/dev/null && if [ -d "$BASE_DIR/build/$1" ]
+then
+  rm "$BASE_DIR/$1" >/dev/null 2>&1
+  rm "$BASE_DIR/node_modules" >/dev/null 2>&1
+  . "$BASE_DIR/build/$1/bin/activate"
+  ln -s "$BASE_DIR/build/$1/lib/node_modules" "$BASE_DIR" 
+  ln -s "$BASE_DIR/build/$1" "$BASE_DIR"
+  shift
+  NENV=1
+else
+  echo "$1 not found!" >&2
+  shift
+fi
+
+if [ $# -ne 0 ]
+then
+PARAM="$1"
+case $PARAM in
+  -b|--base-dir)
+    echo "$BASE_DIR" >&2
+    _exit_0
+    ;;
+  -r|--prerequisites)
+    sudo aptitude install build-essential dpkg-dev zlib1g-dev libreadline-dev libbz2-dev libssl-dev libsqlite3-dev
+    ;;
+  -i|--installed)
+    find "$BASE_DIR"/build/python-* -maxdepth 1 -type d -name "py-*" 2>/dev/null | rev | cut -f1 -d/ | rev
+    find "$BASE_DIR"/build/node-* -maxdepth 0 -type d 2>/dev/null | rev | cut -f1 -d/ | rev
+    ;;
+  -p|--python-newest-available)
+    export -n PYTHON_NEWEST
+    python_newest ; for i in $PYTHON_NEWEST ; do echo $i ; done
+    ;;
+  -P|--python-build)
+    VERSION="$2"
+    shift
+    if [ -z "$VERSION" ]
+    then
+	echo "$PARAM required parameter missing!" >&2
+	_exit_1
+    fi
+    _mkdir_build
+    [ -e "$BASE_DIR/build/python-$VERSION" ] && rm -rf "$BASE_DIR/build/python-$VERSION" >/dev/null 2>&1
+    mkdir -p "$BASE_DIR/build/python-$VERSION"
+    cd "$BASE_DIR/build/python-$VERSION"
+    if [ ! -e "Python-"$VERSION".tgz" ]
+    then
+    	wget "https://www.python.org/ftp/python/$VERSION/Python-"$VERSION".tgz"
+    fi
+    tar zxf "Python-"$VERSION".tgz"
+    BASE_VERSION="`echo $VERSION | cut -f1 -d.`"
+    case $BASE_VERSION in
+      2)
+        python_2_build $VERSION
+        ;;
+      3)
+        python_3_build $VERSION
+        ;;
+      *)
+        echo "$BASE_VERSION not supported :/" >&2
+        _exit_1
+    esac
+    ;;
+  -n|--node-available)
+    PYTHON_ENV="$2"
+    shift
+    if [ -z "$PYTHON_ENV" ]
+    then
+	echo "$PARAM required parameter missing!" >&2
+	_exit_1
+    fi
+    PYTHON_VERSION=`echo $PYTHON_ENV | sed -r 's/py-//'`
+    cd "$BASE_DIR/build/python-$PYTHON_VERSION/py-$PYTHON_VERSION/"
+    . ./bin/activate
+    pip install --upgrade nodeenv
+    nodeenv -l
+    deactivate
+    ;;
+  -N|--node-build)
+    PYTHON_ENV="$2"
+    NODE_VERSION="$3"
+    shift
+    shift
+    if [ -z "$PYTHON_ENV" -o -z "$NODE_VERSION" ]
+    then
+	echo "$PARAM required parameter(s) missing!" >&2
+	_exit_1
+    fi
+    PYTHON_VERSION=`echo $PYTHON_ENV | sed -r 's/py-//'`
+    cd "$BASE_DIR/build/python-$PYTHON_VERSION/py-$PYTHON_VERSION/"
+    . ./bin/activate
+    pip install --upgrade nodeenv
+    nodeenv -n "$NODE_VERSION" "$BASE_DIR/build/node-$NODE_VERSION"
+    sed -i 's/)\$PS1/) \$PS1/' "$BASE_DIR/build/node-$NODE_VERSION/bin/activate"
+    deactivate
+    ;;
+  *)
+    usage_exit
+    ;;
+esac
+fi
+shift
+done
+if [ -n "$PENV" -o -n "$NENV" ]
+then
+  [ -n "$VE_BIN" ] && PATH="$BASE_DIR/$VE_BIN:$PATH"
+  deact() {
+    deactivate_node >/dev/null 2>&1
+    deactivate >/dev/null 2>&1
+    [ -n "$VE_BIN" ] && PATH=`echo "$PATH" | tr ":" "\n" | egrep -v "^$BASE_DIR/$VE_BIN$" | tr "\n" ":" | sed "s/.$//"`
+  }
+  cdve() {
+    cd "$BASE_DIR"
+  }
+  unset usage_exit python_newest _mkdir_build _setdsm python_2_build python_3_build \
+  _exit_1 _exit_0
+  unset x F PY NODE PARAM PYTHON_NEWEST PYTHON_VERSION NODE_ENV PYTHON_ENV \
+  NODE_VERSION VERSION VIRTUALENV_DIR VIRTUALENV_FILE VIRTUALENV_DIR PENV NENV
+fi
