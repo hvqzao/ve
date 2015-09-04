@@ -33,7 +33,7 @@
 # cdve() changes directory to BASE_DIR.
 #
 F="$(dirname `realpath $BASH_SOURCE`)/.ve" ; [ -f "$F" ] && source "$F"
-[ "$BASE_DIR/.ve" != "$F" ] && source "$BASE_DIR/.ve"
+[ -f "$BASE_DIR/.ve" ] && [ "$BASE_DIR/.ve" != "$F" ] && source "$BASE_DIR/.ve"
 #
 # Eventually, above mentioned parameters can be hardcoded: 
 #BASE_DIR="/srv/project"
