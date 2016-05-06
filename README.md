@@ -121,4 +121,4 @@ to `site-packages` in main virtual environment directory, for convenience.
 
 ## License
 
-[MIT License](https://github.com/twbs/bootstrap/blob/master/LICENSE)
+[MIT License](LICENSE)
