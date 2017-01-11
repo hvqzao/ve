@@ -78,7 +78,7 @@ python_newest() {
 }
 
 _mkdir_build() {
-  [ ! -d "$BASE_DIR/build" ] && mkdir -p "$BASE_DIR/build"
+  [ ! -d "$BASE_DIR/lib" ] && mkdir -p "$BASE_DIR/lib"
 }
 
 _setdsm() {
@@ -106,7 +106,7 @@ python_2_build() {
   BASE_VERSION=`echo $VERSION | sed -r 's/\.[^\.]*$//'`
   PYTHON_DIR="Python-$VERSION"
   cd "$PYTHON_DIR"
-  ./configure --prefix="$BASE_DIR/build/python-$VERSION/build"
+  ./configure --prefix="$BASE_DIR/lib/python-$VERSION/build"
   make
   echo "Please verify if Python has been compiled with all compontents that are necessary for you. If not, you can install libraries on your own or use: `basename $BASH_SOURCE` --prerequisites" >&2
   echo "Press Enter to continue or ^C to abort..." >&2
@@ -119,10 +119,10 @@ python_2_build() {
   tar zxf "$VIRTUALENV_FILE"
   VIRTUALENV_DIR=`basename $VIRTUALENV_FILE .tar.gz`
   cd "$VIRTUALENV_DIR/"
-  "$BASE_DIR/build/python-$VERSION/build/bin/python" setup.py install
+  "$BASE_DIR/lib/python-$VERSION/build/bin/python" setup.py install
   cd ..
   #cd ../..
-  "$BASE_DIR/build/python-$VERSION/build/bin/virtualenv" "py-$VERSION"
+  "$BASE_DIR/lib/python-$VERSION/build/bin/virtualenv" "py-$VERSION"
   sed -i 's/)\$PS1/) \$PS1/' "py-$VERSION/bin/activate"
   _setdsm
   cd "py-$VERSION/"
@@ -177,24 +177,24 @@ fi
 while [[ $# > 0 ]]
 do
 
-echo "$1" | egrep "^py-" >/dev/null && if [ -d "$BASE_DIR/build/python-`echo $1 | sed 's/^py-//'`/$1" ]
+echo "$1" | egrep "^py-" >/dev/null && if [ -d "$BASE_DIR/lib/python-`echo $1 | sed 's/^py-//'`/$1" ]
 then
   rm "$BASE_DIR/$1" >/dev/null 2>&1
-  . "$BASE_DIR/build/python-`echo $1 | sed 's/^py-//'`/$1/bin/activate"
-  ln -s "$BASE_DIR/build/python-`echo $1 | sed 's/^py-//'`/$1" "$BASE_DIR"
+  . "$BASE_DIR/lib/python-`echo $1 | sed 's/^py-//'`/$1/bin/activate"
+  ln -s "$BASE_DIR/lib/python-`echo $1 | sed 's/^py-//'`/$1" "$BASE_DIR"
   shift
   PENV=1
 else
   echo "$1 not found!" >&2
   shift
 fi
-echo "$1" | egrep "^node-" >/dev/null && if [ -d "$BASE_DIR/build/$1" ]
+echo "$1" | egrep "^node-" >/dev/null && if [ -d "$BASE_DIR/lib/$1" ]
 then
   rm "$BASE_DIR/$1" >/dev/null 2>&1
   rm "$BASE_DIR/node_modules" >/dev/null 2>&1
-  . "$BASE_DIR/build/$1/bin/activate"
-  ln -s "$BASE_DIR/build/$1/lib/node_modules" "$BASE_DIR" 
-  ln -s "$BASE_DIR/build/$1" "$BASE_DIR"
+  . "$BASE_DIR/lib/$1/bin/activate"
+  ln -s "$BASE_DIR/lib/$1/lib/node_modules" "$BASE_DIR" 
+  ln -s "$BASE_DIR/lib/$1" "$BASE_DIR"
   shift
   NENV=1
 else
@@ -214,8 +214,8 @@ case $PARAM in
     sudo aptitude install build-essential dpkg-dev zlib1g-dev libreadline-dev libbz2-dev libssl-dev libsqlite3-dev
     ;;
   -i|--installed)
-    find "$BASE_DIR"/build/python-* -maxdepth 1 -type d -name "py-*" 2>/dev/null | rev | cut -f1 -d/ | rev
-    find "$BASE_DIR"/build/node-* -maxdepth 0 -type d 2>/dev/null | rev | cut -f1 -d/ | rev
+    find "$BASE_DIR"/lib/python-* -maxdepth 1 -type d -name "py-*" 2>/dev/null | rev | cut -f1 -d/ | rev
+    find "$BASE_DIR"/lib/node-* -maxdepth 0 -type d 2>/dev/null | rev | cut -f1 -d/ | rev
     ;;
   -p|--python-newest-available)
     export -n PYTHON_NEWEST
@@ -230,9 +230,9 @@ case $PARAM in
         _exit_1
     fi
     _mkdir_build
-    [ -e "$BASE_DIR/build/python-$VERSION" ] && rm -rf "$BASE_DIR/build/python-$VERSION" >/dev/null 2>&1
-    mkdir -p "$BASE_DIR/build/python-$VERSION"
-    cd "$BASE_DIR/build/python-$VERSION"
+    [ -e "$BASE_DIR/lib/python-$VERSION" ] && rm -rf "$BASE_DIR/lib/python-$VERSION" >/dev/null 2>&1
+    mkdir -p "$BASE_DIR/lib/python-$VERSION"
+    cd "$BASE_DIR/lib/python-$VERSION"
     if [ ! -e "Python-"$VERSION".tgz" ]
     then
         wget "https://www.python.org/ftp/python/$VERSION/Python-"$VERSION".tgz"
@@ -260,7 +260,7 @@ case $PARAM in
         _exit_1
     fi
     PYTHON_VERSION=`echo $PYTHON_ENV | sed -r 's/py-//'`
-    cd "$BASE_DIR/build/python-$PYTHON_VERSION/py-$PYTHON_VERSION/"
+    cd "$BASE_DIR/lib/python-$PYTHON_VERSION/py-$PYTHON_VERSION/"
     . ./bin/activate
     pip install --upgrade nodeenv
     nodeenv -l
@@ -277,11 +277,11 @@ case $PARAM in
         _exit_1
     fi
     PYTHON_VERSION=`echo $PYTHON_ENV | sed -r 's/py-//'`
-    cd "$BASE_DIR/build/python-$PYTHON_VERSION/py-$PYTHON_VERSION/"
+    cd "$BASE_DIR/lib/python-$PYTHON_VERSION/py-$PYTHON_VERSION/"
     . ./bin/activate
     pip install --upgrade nodeenv
-    nodeenv -n "$NODE_VERSION" "$BASE_DIR/build/node-$NODE_VERSION"
-    sed -i 's/)\$PS1/) \$PS1/' "$BASE_DIR/build/node-$NODE_VERSION/bin/activate"
+    nodeenv -n "$NODE_VERSION" "$BASE_DIR/lib/node-$NODE_VERSION"
+    sed -i 's/)\$PS1/) \$PS1/' "$BASE_DIR/lib/node-$NODE_VERSION/bin/activate"
     deactivate
     ;;
   *)
