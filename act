@@ -1,0 +1,23 @@
+#!/bin/bash
+
+# node virtualenv only
+
+if [[ $_ == $0 ]]
+then
+	echo "Usage: . $0" >&2
+	exit 1
+fi
+
+SRELPATH=`dirname $BASH_SOURCE`
+SABSPATH=`realpath $SRELPATH`
+
+NRELPATH=`ls -d $SABSPATH/../lib/node-* | tail -n 1`
+NABSPATH=`realpath $NRELPATH`
+
+. $NABSPATH/bin/activate
+
+PS1="* "$_OLD_NODE_VIRTUAL_PS1
+
+deact() {
+    deactivate_node >/dev/null 2>&1
+}
