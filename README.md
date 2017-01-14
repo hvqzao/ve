@@ -119,6 +119,27 @@ The above will:
 In Python virtual environments there is symbolic link automatically created
 to `site-packages` in main virtual environment directory, for convenience.
 
+# act
+
+Alternative setup with only Node.JS virtualenv. Will always use most recent `lib/node-*`
+
+## Deployment
+
+```
+sudo aptitude install python-pip
+sudo pip install --upgrade nodeenv
+
+mkdir lib
+nodeenv -n 6.9.4 lib/node-6.9.4
+ln -s lib/node-6.9.4/lib/node_modules
+
+mkdir bin
+cd bin
+wget https://raw.githubusercontent.com/hvqzao/ve/master/act
+chmod +x act
+cd ..
+```
+
 ## License
 
 [MIT License](LICENSE)
