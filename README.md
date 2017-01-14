@@ -138,6 +138,10 @@ cd bin
 wget https://raw.githubusercontent.com/hvqzao/ve/master/act
 chmod +x act
 cd ..
+
+. ./bin/act
+npm install -g npm@latest
+deact
 ```
 
 ## License
